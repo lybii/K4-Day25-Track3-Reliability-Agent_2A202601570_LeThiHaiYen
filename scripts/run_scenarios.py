@@ -9,10 +9,9 @@ from __future__ import annotations
 import argparse
 import csv
 import json
-import random
 from pathlib import Path
 
-from reliability_lab.chaos import SIMULATION_SEED, _scenario_passed, load_queries, run_scenario
+from reliability_lab.chaos import _scenario_passed, load_queries, run_scenario
 from reliability_lab.config import load_config
 
 
@@ -24,7 +23,6 @@ def main() -> None:
 
     config = load_config(args.config)
     queries = load_queries()
-    random.seed(SIMULATION_SEED)
 
     rows: list[dict[str, object]] = []
     for scenario in config.scenarios:

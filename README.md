@@ -93,10 +93,17 @@ src/reliability_lab/
   config.py            # Pydantic config loader (NO changes needed)
 
 scripts/
-  run_chaos.py         # CLI entry point for chaos simulation
-  generate_report.py   # Generates report from metrics JSON
+  run_chaos.py             # CLI entry point for chaos simulation (also writes .csv)
+  generate_report.py       # Auto summary -> reports/generated_summary.md
+  run_scenarios.py         # Per-scenario metrics -> reports/scenarios.{json,csv}
+  run_concurrent.py        # Stretch: serial vs ThreadPoolExecutor comparison
+  redis_circuit_demo.py    # Stretch: shared circuit-breaker state across instances
+  redis_shared_state_demo.py  # Two-instance shared-cache proof
+  cost_aware_demo.py       # Stretch: budget cap routing behaviour
 
 configs/
+  # default.yaml + variants: no_cache.yaml, redis.yaml (cache on Redis),
+  #                          redis_full.yaml (cache + breaker on Redis), cost_cap.yaml
   default.yaml         # Provider fail rates, CB thresholds, cache settings, chaos scenarios
 
 tests/                 # Your target — make all tests green
@@ -292,6 +299,17 @@ make report       # generates report
 - **Cost-aware routing**: After budget hits 80%, route to cheaper model; at 100%, cache-only or static
 - **Property-based tests**: Use `hypothesis` to fuzz circuit breaker state transitions
 - **SLO table**: Define SLOs (availability >= 99%, P95 < 2.5s), check if system meets them
+
+### Implemented in this submission (see `reports/final_report.md` §10)
+
+| Stretch goal | Where | Run it |
+|---|---|---|
+| Concurrency (`ThreadPoolExecutor`) + breaker locks | `chaos.run_scenario_concurrent`, `CircuitBreaker._lock` | `python scripts/run_concurrent.py` |
+| Redis circuit state (shared, single-flight probe) | `circuit_breaker.SharedRedisCircuitBreaker`, `circuit_breaker.backend: redis` | `python scripts/redis_circuit_demo.py` · `configs/redis_full.yaml` |
+| Cost-aware routing (80% → cheapest first, 100% → cache/static) | `gateway.ReliabilityGateway` `budget_usd`, `routing.budget_usd` | `python scripts/cost_aware_demo.py` |
+| Property-based tests (hypothesis) | `tests/test_circuit_breaker_properties.py` | `pytest tests/test_circuit_breaker_properties.py` |
+| SLO table | `reports/final_report.md` §3 | — |
+| Deterministic chaos (virtual clock) | `chaos.ManualClock`, injectable `CircuitBreaker.clock` | two `make run-chaos` → identical counters |
 
 ---
 

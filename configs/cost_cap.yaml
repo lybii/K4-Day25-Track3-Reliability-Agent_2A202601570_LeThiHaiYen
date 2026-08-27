@@ -1,0 +1,27 @@
+# Cost-aware routing demo (scripts/cost_aware_demo.py).
+# Cache is OFF so every request costs money and the budget actually bites.
+providers:
+  - name: primary
+    fail_rate: 0.05
+    base_latency_ms: 180
+    cost_per_1k_tokens: 0.01
+  - name: backup
+    fail_rate: 0.05
+    base_latency_ms: 260
+    cost_per_1k_tokens: 0.006
+circuit_breaker:
+  failure_threshold: 3
+  reset_timeout_seconds: 2
+  success_threshold: 1
+  backend: memory
+cache:
+  enabled: false
+  backend: memory
+  ttl_seconds: 300
+  similarity_threshold: 0.92
+  redis_url: "redis://localhost:6379/0"
+load_test:
+  requests: 150
+routing:
+  budget_usd: 0.03          # ~20-25 primary calls, then cheapest-first, then cache/static
+scenarios: []

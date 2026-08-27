@@ -18,6 +18,7 @@ class CircuitBreakerConfig(BaseModel):
     failure_threshold: int = Field(gt=0)
     reset_timeout_seconds: float = Field(gt=0)
     success_threshold: int = Field(gt=0)
+    backend: str = "memory"  # "memory" (per-process) or "redis" (shared across instances)
 
 
 class CacheConfig(BaseModel):
@@ -30,6 +31,13 @@ class CacheConfig(BaseModel):
 
 class LoadTestConfig(BaseModel):
     requests: int = Field(gt=0)
+    concurrency: int = Field(default=1, gt=0)  # threads for the concurrent load runner
+
+
+class RoutingConfig(BaseModel):
+    # Cost-aware routing. None disables it. Below 80% of budget: normal order.
+    # 80–100%: cheapest provider first. At/above 100%: cache-only, else static.
+    budget_usd: float | None = Field(default=None, gt=0)
 
 
 class ScenarioConfig(BaseModel):
@@ -43,6 +51,7 @@ class LabConfig(BaseModel):
     circuit_breaker: CircuitBreakerConfig
     cache: CacheConfig
     load_test: LoadTestConfig
+    routing: RoutingConfig = Field(default_factory=RoutingConfig)
     scenarios: list[ScenarioConfig] = Field(default_factory=list)
 
 

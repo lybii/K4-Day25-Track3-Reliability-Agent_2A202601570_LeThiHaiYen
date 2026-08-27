@@ -1,40 +1,60 @@
-Redis shared-cache evidence
-Generated: 2026-08-27T08:27:04Z
-Container: k4-day25-track3-reliability-agent_2a202601570_lethihaiyen-redis-1 redis:7-alpine Up 52 minutes (healthy)
+Redis evidence  —  generated 2026-08-27T09:15:58Z
+container: k4-day25-track3-reliability-agent_2a202601570_lethihaiyen-redis-1 Up 2 hours (healthy)
 
-== redis-cli PING ==
-PONG
-
-== KEYS "rl:cache:*" (after: python scripts/run_chaos.py --config configs/redis.yaml) ==
+======================================================================
+A. SHARED RESPONSE CACHE  (configs/redis.yaml, after run_chaos)
+======================================================================
+$ redis-cli KEYS 'rl:cache:*'
 rl:cache:9e413fd814eb
 rl:cache:3dab98c0e49e
 rl:cache:d354658dc020
 rl:cache:dacb2b833659
 rl:cache:734852f3cf4a
 rl:cache:b2a52f7dc795
-rl:cache:da61fb49b4f6
 rl:cache:095946136fea
 rl:cache:98332d0d1c9c
 rl:cache:844ef0143a5c
 rl:cache:0bc3b1acf73d
+rl:cache:8baa2cfa11fa
 rl:cache:fff10da1c72c
-
-== DBSIZE ==
+$ redis-cli DBSIZE
 12
-
-== Sample entry ==
-HGETALL rl:cache:9e413fd814eb
+$ redis-cli HGETALL rl:cache:9e413fd814eb
 query
 What should I do when API calls return 429?
 response
 [primary] reliable answer for: What should I do when API calls return 429?
-TTL rl:cache:9e413fd814eb -> 143 sec (from ttl_seconds=300)
+$ redis-cli TTL rl:cache:9e413fd814eb -> 251  (ttl_seconds=300)
 
-== Privacy guardrail: scan every cached query for sensitive patterns ==
-(no privacy-sensitive query cached - guardrail holding)
+privacy guardrail — scan every cached query for sensitive patterns:
+  (none stored — guardrail holding)
 
-== Shared state across two independent SharedRedisCache instances ==
+two-instance shared-state demo (scripts/redis_shared_state_demo.py):
 1. shared exact-hit via instance B : value='[A] CLOSED/OPEN/HALF_OPEN ...' score=1.0
 2. shared semantic hit via B       : value='[A] CLOSED/OPEN/HALF_OPEN ...' score=0.838
 3. privacy query via B             : value=None (expected None)
 4. false-hit (2024 vs 2025) via B  : value=None score=0.958 log_len=1
+
+======================================================================
+B. SHARED CIRCUIT-BREAKER STATE  (scripts/redis_circuit_demo.py)
+======================================================================
+start:                A.state = closed  B.state = closed
+after 3 failures on A: A.state = open  B.state = open  (B never saw a failure)
+B.call(...) -> fails fast: circuit 'primary' is open (shared)
+B.allow_request() = False  (shared OPEN)
+after cooldown: A.allow_request()=True  B.allow_request()=False  (single-flight: exactly one True)
+probe success -> A.state=closed  B.state=closed  (shared CLOSED)
+transition_log (shared, read from Redis):
+      closed -> open      failure_threshold_reached
+        open -> half_open reset_timeout_elapsed
+   half_open -> closed    probe_success
+
+$ redis-cli KEYS 'rl:cb:*'  (after a full run_chaos --config configs/redis_full.yaml)
+rl:cb:backup:failures
+rl:cb:primary:log
+rl:cb:primary:state
+rl:cb:backup:opened_at
+rl:cb:primary:opened_at
+rl:cb:backup:state
+rl:cb:primary:failures
+rl:cb:backup:log

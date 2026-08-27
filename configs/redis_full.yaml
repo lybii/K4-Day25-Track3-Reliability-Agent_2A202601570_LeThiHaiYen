@@ -1,0 +1,40 @@
+# Everything shared via Redis: response cache AND circuit-breaker state.
+# Requires: docker compose up -d
+providers:
+  - name: primary
+    fail_rate: 0.25
+    base_latency_ms: 180
+    cost_per_1k_tokens: 0.01
+  - name: backup
+    fail_rate: 0.05
+    base_latency_ms: 260
+    cost_per_1k_tokens: 0.006
+circuit_breaker:
+  failure_threshold: 3
+  reset_timeout_seconds: 2
+  success_threshold: 1
+  backend: redis
+cache:
+  enabled: true
+  backend: redis
+  ttl_seconds: 300
+  similarity_threshold: 0.92
+  redis_url: "redis://localhost:6379/0"
+load_test:
+  requests: 100
+scenarios:
+  - name: all_healthy
+    description: "Baseline - both providers healthy"
+    provider_overrides:
+      primary: 0.0
+      backup: 0.0
+  - name: primary_timeout_100
+    description: "Primary fails 100% - shared breaker trips once, every replica sees it"
+    provider_overrides:
+      primary: 1.0
+      backup: 0.02
+  - name: both_degraded_hard
+    description: "Primary 80% / backup 50% - shared breakers + static fallback"
+    provider_overrides:
+      primary: 0.8
+      backup: 0.5

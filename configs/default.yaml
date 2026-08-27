@@ -32,10 +32,10 @@ scenarios:
     provider_overrides:
       primary: 1.0
       backup: 0.02
-  - name: primary_flaky_50
-    description: "Primary fails 50% - breaker oscillates: opens on failure bursts AND recovers (open -> half_open -> closed) when a probe succeeds"
+  - name: primary_flaky_55
+    description: "Primary fails 55% - breaker oscillates: opens on failure bursts AND recovers (open -> half_open -> closed) when a probe succeeds; cache + backup keep availability at 100%"
     provider_overrides:
-      primary: 0.5
+      primary: 0.55
       backup: 0.02
   - name: both_degraded_hard
     description: "Primary 80% / backup 50% - both breakers open, static fallback absorbs the storm and fails fast"

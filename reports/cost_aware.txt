@@ -1,0 +1,14 @@
+
+[cost cap ON] budget=0.03  requests=150
+  spend        = $0.0301
+  served       = 60/150
+  route budget_exhausted       90
+  route primary                40
+  route cost_saver_primary     16
+  route fallback               4
+
+[cost cap OFF (same run, no budget)] budget=None  requests=150
+  spend        = $0.0873
+  served       = 150/150
+  route primary                141
+  route fallback               9

@@ -1,0 +1,9 @@
+# scripts/run_concurrent.py --config configs/default.yaml --scenario primary_flaky_55 --workers 8
+# 2026-08-27T09:17:21Z
+
+scenario: primary_flaky_55   requests: 100   workers: 8
+serial       wall= 12.49s  throughput=   8.0 req/s  avail=1.000  P95=  316.2ms  circuit_opens=  3  fallback_sr=1.000
+concurrent   wall=  2.00s  throughput=  50.1 req/s  avail=0.980  P95=  318.4ms  circuit_opens=  1  fallback_sr=0.956
+
+wall-clock speedup: 6.3x
+note: concurrent circuit_opens / P95 differ from serial because many requests now hit a still-OPEN breaker in the same window, and probes race -- the locks keep the counters consistent, not identical.
