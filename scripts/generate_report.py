@@ -8,7 +8,9 @@ from pathlib import Path
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--metrics", default="reports/metrics.json")
-    parser.add_argument("--out", default="reports/final_report.md")
+    # NOTE: writes an auto-generated summary. The graded, hand-authored analysis
+    # lives in reports/final_report.md and is not overwritten by `make report`.
+    parser.add_argument("--out", default="reports/generated_summary.md")
     args = parser.parse_args()
     metrics = json.loads(Path(args.metrics).read_text())
     lines = [

@@ -12,7 +12,7 @@ circuit_breaker:
   reset_timeout_seconds: 2
   success_threshold: 1
 cache:
-  enabled: true
+  enabled: false
   backend: memory          # "memory" (default) or "redis" (requires docker compose up -d)
   ttl_seconds: 300
   similarity_threshold: 0.92
